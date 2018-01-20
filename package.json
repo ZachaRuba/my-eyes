@@ -1,6 +1,6 @@
 {
   "name": "my-eyes",
-  "main": "index.js",
+  "main": "server.js",
   "description": "",
   "version": "0.1.1",
   "private": false,
@@ -8,7 +8,7 @@
     "node": "9.*"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "repository": {
     "type": "git",

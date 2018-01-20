@@ -50,8 +50,8 @@ const convert_image_to_text = (fileName, res) => {
 }
 
 const text_to_speech = new TextToSpeechV1({
-    username: process.env.USERNAME,
-    password: process.env.PASSWORD
+    username: process.env.USERNAME_WAT,
+    password: process.env.PASSWORD_WAT
 });
 
 const text_params = (text_to_speech) => {
