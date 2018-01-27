@@ -94,6 +94,7 @@ typings/
 my-eyes-b55d9027b05f.json
 
 uploads/*
+audio/*
 
 # End of https://www.gitignore.io/api/git,node,macos
 
