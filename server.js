@@ -58,22 +58,6 @@ var upload = multer({ storage: storage,
     limits: { fileSize: 1024 * 1024 * 50}
 });
 
-//Set up for Storing Audio under the audio folder
-var storage2 = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, './textAudio/')
-  },
-  filename: function (req, file, cb) {
-    crypto.pseudoRandomBytes(16, function (err, raw) {
-      cb(null, raw.toString('hex') + Date.now() + '.' + mime.getExtension(file.mimetype));
-    });
-  }
-});
-
-var textAudio = multer({ storage: storage2,
-    limits: { fileSize: 1024 * 1024 * 50}
-});
-
 /*
 =====================================================================
      FUNCTIONS
@@ -83,25 +67,25 @@ var textAudio = multer({ storage: storage2,
 // Performs text detection on the local file
 const convert_image_to_text = (fileName, audioFile, res) => {
     client
-        .documentTextDetection(fileName) //Call google vision api on a file.
+        .documentTextDetection("uploads/"+fileName) //Call google vision api on a file.
         .then(results => {
-            const fullTextAnnotation = results[0].fullTextAnnotation; //On response from google, grab the text
-            return fullTextAnnotation.text; //We might be able to pipe this...
-        })
-        .then(text => {
-            var transcript = text_to_speech.synthesize(text_params(text)); //Once we have the text, call ibm text-to-speech and pass the text
+            var transcript = text_to_speech.synthesize(text_params(results[0].fullTextAnnotation.text)); //Once we have the text, call ibm text-to-speech and pass the text
             transcript.pipe(audioFile.stream); //pipe the stream from ibm into our res variable (AKA, sends an audio stream)
             transcript.pipe(res);
+            transcript.on('end', ()=>{
+              console.log(`Transcript stream for ${audioFile.fileName} has ended.`);
+              audioFile.stream.end();
+              res.end();
+              });
+            fs.writeFile('text/'+fileName+'.json',JSON.stringify(results),(err)=>{
+                if(err) throw err;
+                console.log(`The text file ${fileName}.txt was saved!`);
+              });
         })
         .catch(err => {
             console.error('ERROR:', err);
         });
 }
-
-function saveAudio(){
-  var file = fs.createWriteStream()
-  return file;
-};
 
 /*
 =====================================================================
@@ -125,9 +109,11 @@ app.post('/upload', upload.single('file_input'), function (req, res, next) {
 app.get('/audio/:img',
   function(req, res, next) {
     const myFileName = req.params.img + ".mp3";
-    var audioFile = {stream: fs.createWriteStream("audio/"+myFileName)};
-    convert_image_to_text("uploads/"+req.params.img, audioFile, res);
-    //audioFile.stream.end();
+    var audioFile = {
+      stream: fs.createWriteStream("audio/"+myFileName),
+      fileName: myFileName};
+    audioFile.stream.on('finish',()=>{console.log(`Audio file ${myFileName} has been saved.`);});
+    convert_image_to_text(req.params.img, audioFile, res);
 });
 
 var port = process.env.PORT || 3000;
